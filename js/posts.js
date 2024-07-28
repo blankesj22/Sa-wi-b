@@ -1,4 +1,4 @@
-import { app, authModule, auth, firestoreModule, firestore, storage, storageModule } from './firebase.js';
+import { authModule, auth, firestoreModule, firestore, storage, storageModule } from './firebase.js';
 
 // Referencias a elementos del DOM
 const postsContainer = document.getElementById('posts-container');
@@ -7,17 +7,18 @@ const createPostBtn = document.getElementById('create-post-btn');
 const createPostForm = document.getElementById('create-post-form');
 const logoutBtn = document.getElementById('logout-btn');
 
-// Verificar si el usuario está logueado
+// Verificar si el usuario está logueado, para mostrar/ocultar opciones de crear posts y logout
 authModule.onAuthStateChanged(auth, (user) => {
   if (user) {
     // Usuario logueado
     console.log('Usuario logueado:', user);
     newPostForm.style.display = 'block';
-    loadPosts();
+    logoutBtn.style.display = 'block'; // Mostrar el botón de cerrar sesión
   } else {
     // Usuario no logueado
     console.log('Usuario no logueado');
-    window.location.href = 'login.html';
+    newPostForm.style.display = 'none';
+    logoutBtn.style.display = 'none'; // Ocultar el botón de cerrar sesión
   }
 });
 
@@ -33,6 +34,9 @@ const loadPosts = () => {
   });
 };
 
+// Cargar los posts de Firestore al inicio, sin importar si el usuario está logueado
+loadPosts();
+
 // Crear un elemento HTML para un post
 const createPostElement = (postData) => {
   const postDiv = document.createElement('div');
@@ -40,7 +44,7 @@ const createPostElement = (postData) => {
 
   const postHeader = document.createElement('div');
   postHeader.classList.add('card-header');
-  postHeader.textContent = postData.author + ' - ' + new Date(postData.timestamp).toLocaleString();
+  postHeader.textContent = postData.author + ' - ' + tmpToDate(postData.timestamp);
   postDiv.appendChild(postHeader);
 
   const postBody = document.createElement('div');
@@ -74,21 +78,23 @@ const createPostElement = (postData) => {
   postBody.appendChild(commentsDiv);
 
   // Formulario para agregar un nuevo comentario
-  const newCommentForm = document.createElement('form');
-  newCommentForm.classList.add('mt-3');
-  newCommentForm.innerHTML = `
-    <div class="mb-3">
-      <label for="comment-text-${postData.id}" class="form-label">Agregar un comentario:</label>
-      <textarea class="form-control" id="comment-text-${postData.id}" rows="2" required></textarea>
-    </div>
-    <button type="submit" class="btn btn-primary">Comentar</button>
-  `;
-  newCommentForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const commentText = document.getElementById(`comment-text-${postData.id}`).value;
-    addComment(postData.id, commentText);
-  });
-  postBody.appendChild(newCommentForm);
+  if (auth.currentUser) { 
+    const newCommentForm = document.createElement('form');
+    newCommentForm.classList.add('mt-3');
+    newCommentForm.innerHTML = `
+      <div class="mb-3">
+        <label for="comment-text-${postData.id}" class="form-label">Agregar un comentario:</label>
+        <textarea class="form-control" id="comment-text-${postData.id}" rows="2" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Comentar</button>
+    `;
+    newCommentForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const commentText = document.getElementById(`comment-text-${postData.id}`).value;
+      addComment(postData.id, commentText);
+    });
+    postBody.appendChild(newCommentForm);
+  }
 
   postDiv.appendChild(postBody);
   return postDiv;
@@ -100,7 +106,7 @@ const createCommentElement = (comment) => {
   commentDiv.classList.add('card', 'mb-2');
   commentDiv.innerHTML = `
     <div class="card-header">
-      ${comment.author} - ${new Date(comment.timestamp).toLocaleString()}
+      ${comment.author} - ${tmpToDate(comment.timestamp)}
     </div>
     <div class="card-body">
       <p class="card-text">${comment.text}</p>
@@ -118,34 +124,45 @@ createPostBtn.addEventListener('click', () => {
 createPostForm.addEventListener('submit', (event) => {
   event.preventDefault();
 
-  const text = document.getElementById('post-text').value;
-  const imageFiles = document.getElementById('post-images').files;
+  if (auth.currentUser) {
+    const text = document.getElementById('post-text').value;
+    const imageFiles = document.getElementById('post-images').files;
 
-  const imagePromises = [];
-  for (let i = 0; i < imageFiles.length; i++) {
-    const imageFile = imageFiles[i];
-    if (imageFile.size > 5 * 1024 * 1024) {
-      alert(`La imagen ${imageFile.name} es demasiado grande (máximo 5MB).`);
-      return;
+    const imagePromises = [];
+    for (let i = 0; i < imageFiles.length; i++) {
+      const imageFile = imageFiles[i];
+      if (imageFile.size > 5 * 1024 * 1024) {
+        alert(`La imagen ${imageFile.name} es demasiado grande (máximo 5MB).`);
+        return;
+      }
+      imagePromises.push(uploadImage(imageFile));
     }
-    imagePromises.push(uploadImage(imageFile));
-  }
 
-  Promise.all(imagePromises).then((imageUrls) => {
-    const newPost = {
-      author: auth.currentUser.email,
-      text: text,
-      images: imageUrls,
-      comments: [],
-      timestamp: firestoreModule.Timestamp.now(),
-    };
-    firestoreModule.addDoc(firestoreModule.collection(firestore, 'posts'), newPost).then(() => {
-      console.log('Reclamo publicado correctamente');
-      loadPosts();
-      createPostForm.reset();
-      newPostForm.style.display = 'none';
+    Promise.all(imagePromises).then((imageUrls) => {
+      const newPostRef = firestoreModule.doc(
+        firestoreModule.collection(firestore, "posts"),
+      );
+
+      const newPost = {
+        id: newPostRef.id,
+        author: auth.currentUser.email,
+        text: text,
+        images: imageUrls,
+        comments: [],
+        timestamp: firestoreModule.Timestamp.now(),
+      };
+
+      firestoreModule.setDoc(newPostRef, newPost).then(() => {
+        console.log("Reclamo publicado correctamente");
+        loadPosts();
+        createPostForm.reset();
+        newPostForm.style.display = "none";
+      });
     });
-  });
+  } else {
+    alert('Debes iniciar sesión para crear un nuevo reclamo.');
+    window.location.href = 'login.html';
+  }
 });
 
 // Subir una imagen a Firebase Storage
@@ -180,3 +197,5 @@ logoutBtn.addEventListener('click', () => {
     window.location.href = 'login.html';
   });
 });
+
+const tmpToDate = (tmp) => new Date(tmp.toDate()).toLocaleString();
