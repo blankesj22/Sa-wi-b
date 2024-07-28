@@ -1,37 +1,46 @@
-import { authModule, auth, firestoreModule, firestore, storage, storageModule } from './firebase.js';
+import {
+  authModule,
+  auth,
+  firestoreModule,
+  firestore,
+  storage,
+  storageModule,
+} from "./firebase.js";
 
 // Referencias a elementos del DOM
-const postsContainer = document.getElementById('posts-container');
-const newPostForm = document.getElementById('new-post-form');
-const createPostBtn = document.getElementById('create-post-btn');
-const createPostForm = document.getElementById('create-post-form');
-const logoutBtn = document.getElementById('logout-btn');
+const postsContainer = document.getElementById("posts-container");
+const newPostForm = document.getElementById("new-post-form");
+const createPostBtn = document.getElementById("create-post-btn");
+const createPostForm = document.getElementById("create-post-form");
+const logoutBtn = document.getElementById("logout-btn");
 
 // Verificar si el usuario está logueado, para mostrar/ocultar opciones de crear posts y logout
 authModule.onAuthStateChanged(auth, (user) => {
   if (user) {
     // Usuario logueado
-    console.log('Usuario logueado:', user);
-    newPostForm.style.display = 'block';
-    logoutBtn.style.display = 'block'; // Mostrar el botón de cerrar sesión
+    console.log("Usuario logueado:", user);
+    newPostForm.style.display = "block";
+    logoutBtn.style.display = "block"; // Mostrar el botón de cerrar sesión
   } else {
     // Usuario no logueado
-    console.log('Usuario no logueado');
-    newPostForm.style.display = 'none';
-    logoutBtn.style.display = 'none'; // Ocultar el botón de cerrar sesión
+    console.log("Usuario no logueado");
+    newPostForm.style.display = "none";
+    logoutBtn.style.display = "none"; // Ocultar el botón de cerrar sesión
   }
 });
 
 // Cargar los posts de Firestore
 const loadPosts = () => {
-  firestoreModule.getDocs(firestoreModule.collection(firestore, 'posts')).then((querySnapshot) => {
-    postsContainer.innerHTML = '';
-    querySnapshot.forEach((doc) => {
-      const postData = doc.data();
-      const postElement = createPostElement(postData);
-      postsContainer.appendChild(postElement);
+  firestoreModule
+    .getDocs(firestoreModule.collection(firestore, "posts"))
+    .then((querySnapshot) => {
+      postsContainer.innerHTML = "";
+      querySnapshot.forEach((doc) => {
+        const postData = doc.data();
+        const postElement = createPostElement(postData);
+        postsContainer.appendChild(postElement);
+      });
     });
-  });
 };
 
 // Cargar los posts de Firestore al inicio, sin importar si el usuario está logueado
@@ -39,37 +48,38 @@ loadPosts();
 
 // Crear un elemento HTML para un post
 const createPostElement = (postData) => {
-  const postDiv = document.createElement('div');
-  postDiv.classList.add('card', 'mb-4');
+  const postDiv = document.createElement("div");
+  postDiv.classList.add("card", "mb-4");
 
-  const postHeader = document.createElement('div');
-  postHeader.classList.add('card-header');
-  postHeader.textContent = postData.author + ' - ' + tmpToDate(postData.timestamp);
+  const postHeader = document.createElement("div");
+  postHeader.classList.add("card-header");
+  postHeader.textContent =
+    postData.author + " - " + tmpToDate(postData.timestamp);
   postDiv.appendChild(postHeader);
 
-  const postBody = document.createElement('div');
-  postBody.classList.add('card-body');
+  const postBody = document.createElement("div");
+  postBody.classList.add("card-body");
 
-  const postText = document.createElement('p');
+  const postText = document.createElement("p");
   postText.textContent = postData.text;
   postBody.appendChild(postText);
 
   // Mostrar imágenes si las hay
   if (postData.images) {
-    const imagesDiv = document.createElement('div');
+    const imagesDiv = document.createElement("div");
     postData.images.forEach((imageUrl) => {
-      const imageElement = document.createElement('img');
+      const imageElement = document.createElement("img");
       imageElement.src = imageUrl;
-      imageElement.classList.add('img-fluid', 'mb-2');
+      imageElement.classList.add("img-fluid", "mb-2");
       imagesDiv.appendChild(imageElement);
     });
     postBody.appendChild(imagesDiv);
   }
 
   // Sección de comentarios
-  const commentsDiv = document.createElement('div');
-  commentsDiv.classList.add('mt-3');
-  commentsDiv.innerHTML = '<h4>Comentarios:</h4>';
+  const commentsDiv = document.createElement("div");
+  commentsDiv.classList.add("mt-3");
+  commentsDiv.innerHTML = "<h4>Comentarios:</h4>";
   postData.comments.forEach((comment) => {
     const commentElement = createCommentElement(comment);
     commentsDiv.appendChild(commentElement);
@@ -78,9 +88,9 @@ const createPostElement = (postData) => {
   postBody.appendChild(commentsDiv);
 
   // Formulario para agregar un nuevo comentario
-  if (auth.currentUser) { 
-    const newCommentForm = document.createElement('form');
-    newCommentForm.classList.add('mt-3');
+  if (auth.currentUser) {
+    const newCommentForm = document.createElement("form");
+    newCommentForm.classList.add("mt-3");
     newCommentForm.innerHTML = `
       <div class="mb-3">
         <label for="comment-text-${postData.id}" class="form-label">Agregar un comentario:</label>
@@ -88,9 +98,11 @@ const createPostElement = (postData) => {
       </div>
       <button type="submit" class="btn btn-primary">Comentar</button>
     `;
-    newCommentForm.addEventListener('submit', (event) => {
+    newCommentForm.addEventListener("submit", (event) => {
       event.preventDefault();
-      const commentText = document.getElementById(`comment-text-${postData.id}`).value;
+      const commentText = document.getElementById(
+        `comment-text-${postData.id}`,
+      ).value;
       addComment(postData.id, commentText);
     });
     postBody.appendChild(newCommentForm);
@@ -102,8 +114,8 @@ const createPostElement = (postData) => {
 
 // Crear un elemento HTML para un comentario
 const createCommentElement = (comment) => {
-  const commentDiv = document.createElement('div');
-  commentDiv.classList.add('card', 'mb-2');
+  const commentDiv = document.createElement("div");
+  commentDiv.classList.add("card", "mb-2");
   commentDiv.innerHTML = `
     <div class="card-header">
       ${comment.author} - ${tmpToDate(comment.timestamp)}
@@ -116,17 +128,18 @@ const createCommentElement = (comment) => {
 };
 
 // Mostrar/ocultar el formulario para crear un nuevo post
-createPostBtn.addEventListener('click', () => {
-  newPostForm.style.display = newPostForm.style.display === 'none' ? 'block' : 'none';
+createPostBtn.addEventListener("click", () => {
+  newPostForm.style.display =
+    newPostForm.style.display === "none" ? "block" : "none";
 });
 
 // Manejar la creación de un nuevo post
-createPostForm.addEventListener('submit', (event) => {
+createPostForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
   if (auth.currentUser) {
-    const text = document.getElementById('post-text').value;
-    const imageFiles = document.getElementById('post-images').files;
+    const text = document.getElementById("post-text").value;
+    const imageFiles = document.getElementById("post-images").files;
 
     const imagePromises = [];
     for (let i = 0; i < imageFiles.length; i++) {
@@ -160,8 +173,8 @@ createPostForm.addEventListener('submit', (event) => {
       });
     });
   } else {
-    alert('Debes iniciar sesión para crear un nuevo reclamo.');
-    window.location.href = 'login.html';
+    alert("Debes iniciar sesión para crear un nuevo reclamo.");
+    window.location.href = "login.html";
   }
 });
 
@@ -181,20 +194,22 @@ const addComment = (postId, commentText) => {
     text: commentText,
     timestamp: firestoreModule.Timestamp.now(),
   };
-  const postRef = firestoreModule.doc(firestore, 'posts', postId);
-  firestoreModule.updateDoc(postRef, {
-    comments: firestoreModule.arrayUnion(newComment),
-  }).then(() => {
-    console.log('Comentario agregado correctamente');
-    loadPosts();
-  });
+  const postRef = firestoreModule.doc(firestore, "posts", postId);
+  firestoreModule
+    .updateDoc(postRef, {
+      comments: firestoreModule.arrayUnion(newComment),
+    })
+    .then(() => {
+      console.log("Comentario agregado correctamente");
+      loadPosts();
+    });
 };
 
 // Cerrar sesión
-logoutBtn.addEventListener('click', () => {
+logoutBtn.addEventListener("click", () => {
   authModule.signOut(auth).then(() => {
-    console.log('Sesión cerrada correctamente');
-    window.location.href = 'login.html';
+    console.log("Sesión cerrada correctamente");
+    window.location.href = "login.html";
   });
 });
 
