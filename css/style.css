@@ -812,3 +812,17 @@ Product Page CSS
     object-fit: cover;
   }
 
+  .login-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 90vh; /* Asegura que la sección ocupe toda la altura de la ventana */
+}
+
+.section-post {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh; /* Asegura que la sección ocupe toda la altura de la ventana */
+    padding-top: 5px; /* Ajusta esto según la altura de tu navbar */
+}

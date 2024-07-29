@@ -5,15 +5,15 @@ import * as firestoreFirebaseOriginal from "https://www.gstatic.com/firebasejs/1
 import * as analyticsFirebaseOriginal from "https://www.gstatic.com/firebasejs/10.12.4/firebase-analytics.js";
 import * as storageFirebaseOriginal from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
 
-const firebaseConfig = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: "",
-  measurementId: "",
-};
+// const firebaseConfig = {
+//   apiKey: "",
+//   authDomain: "",
+//   projectId: "",
+//   storageBucket: "",
+//   messagingSenderId: "",
+//   appId: "",
+//   measurementId: "",
+// };
 
 // Initialize Firebase
 const appModule = appFirebaseOrigiginal;
