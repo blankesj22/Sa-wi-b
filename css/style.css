@@ -823,6 +823,12 @@ Product Page CSS
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh; /* Asegura que la sección ocupe toda la altura de la ventana */
-    padding-top: 5px; /* Ajusta esto según la altura de tu navbar */
+    padding-top: 100px; /* Ajusta esto según la altura de tu navbar */
+}
+
+.img-fluid1 {
+    /* Asegura que la imagen se centre*/
+    display: flexbox;   
+    max-width: 33%;
+    height: auto;
 }

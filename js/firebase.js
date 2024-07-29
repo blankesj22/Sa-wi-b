@@ -15,6 +15,8 @@ import * as storageFirebaseOriginal from "https://www.gstatic.com/firebasejs/10.
 //   measurementId: "",
 // };
 
+
+
 // Initialize Firebase
 const appModule = appFirebaseOrigiginal;
 const authModule = authFirebaseOriginal;

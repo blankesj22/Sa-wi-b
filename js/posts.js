@@ -70,7 +70,7 @@ const createPostElement = (postData) => {
     postData.images.forEach((imageUrl) => {
       const imageElement = document.createElement("img");
       imageElement.src = imageUrl;
-      imageElement.classList.add("img-fluid", "mb-2");
+      imageElement.classList.add("img-fluid1", "mb-2");
       imagesDiv.appendChild(imageElement);
     });
     postBody.appendChild(imagesDiv);
